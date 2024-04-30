@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Buddy</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            $('#generate-btn').prop('disabled', true); // Initially disable the button
+            
+            $('#description').keyup(function() {
+                // Enable the button only if there is some text in the description
+                $('#generate-btn').prop('disabled', !$(this).val());
+            });
+
+            $('#generate-btn').click(function(e){
+                e.preventDefault();
+                let description = $('#description').val();
+                $(this).prop('disabled', true); // Disable the button again while processing
+                $.ajax({
+                    url: '/generate-image',
+                    type: 'POST',
+                    contentType: 'application/json', // Correct: You're sending JSON data
+                    data: JSON.stringify({description: description}),
+                    xhrFields: {
+                        responseType: 'blob'  // Expecting a blob response, which is correct for an image
+                    },
+                    success: function(blob){
+                        // Create a URL for the blob object and set it as the src of an image element
+                        var url = window.URL.createObjectURL(blob);
+                        $('#generated-image').attr('src', url).css('display', 'block');
+                        $('#error-message').text('');
+                        $('#generate-btn').prop('disabled', false); // Re-enable the button after displaying the image
+                    },
+                    error: function(xhr){
+                        $('#error-message').text('An error occurred: Type your response differently' + xhr.responseText);
+                        $('#generate-btn').prop('disabled', false); // Re-enable the button on error
+                    }
+                });
+            });
+
+            $('#workout').click(function(e){
+                e.preventDefault();
+                let goalText = $('#goalText').val();
+                let workoutText = $('#workoutText').val();
+                $.ajax({
+                    url: '/goalText',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({goalText: goalText, workoutText: workoutText}),
+                    success: function(data){
+                        $('#workoutText').val(data.workoutPlan);
+                    },
+                    error: function(xhr){
+                        $('#workoutText').val('An error occurred: ' + xhr.workoutText);
+                    }
+                });
+            });
+
+            $('#newWorkout').click(function(e){
+                e.preventDefault();
+                let responseText = $('#responseText').val();
+                let workoutText = $('#workoutText').val();
+                $.ajax({
+                    url: '/responseText',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({responseText: responseText, workoutText: workoutText}),
+                    success: function(data){
+                        $('#workoutText').val(data.workoutPlan);
+                    },
+                    error: function(xhr){
+                        $('#workoutText').val('An error occurred: ' + xhr.workoutText);
+                    }
+                });
+            });
+
+            $('#readmyworkout').click(function(e){
+                    e.preventDefault();
+                    let workoutText = $('#workoutText').val();
+
+                    // Create a new speech synthesis utterance with the workoutText
+                    let utterance = new SpeechSynthesisUtterance(workoutText);
+                    
+                    // Use the default speech synthesis voice
+                    utterance.voice = speechSynthesis.getVoices()[0];
+                    
+                    // Speak the utterance
+                    speechSynthesis.speak(utterance);
+
+                    // Perform the AJAX request to the server
+                    $.ajax({
+                        url: '/readmyworkout',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({workoutText: workoutText}),
+                        success: function(data){
+                            // Handle success if needed
+                        },
+                        error: function(xhr){
+                            // Handle error if needed
+                    }
+    });
+});
+
+
+        });
+    </script>
+    <style>
+            body {
+            background-color:#A3FFFF;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: none;
+            margin-top: 20px;
+        }
+
+        textarea {
+            margin-top: 20px;
+            width: 100%;
+    </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Your Customized Workout Plan</h1>
+    <textarea id="goalText" placeholder="Let's talk, tell me the goals you are trying to accomplish here..." rows="10" cols="50"></textarea>
+    <button id="workout">Give me my workout plan</button>
+    <br>
+    <textarea id="workoutText" placeholder="Display of your workout here..."></textarea>
+    <br>
+    <button id="readmyworkout">Read My Workout Plan</button>
+    <br>
+  
+    <textarea id="description" rows="4" cols="50" placeholder="Describe the image you want to generate..."></textarea>
+    <br>
+    <button id="generate-btn">Generate Image of Workout</button>
+    <p id="error-message" style="color: red;"></p>
+    <!-- Initially hide the image tag -->
+    <img id="generated-image" style="max-width: 100%; height: auto; display: none;">
+    <textarea id="responseText" placeholder="Type your concerns..." rows="10" cols="50"></textarea>
+    <button id="newWorkout">Give me new workout plan</button>
+
+  </div>
+</body>
+</html>
